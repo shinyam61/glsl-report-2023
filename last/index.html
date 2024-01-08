@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./script.js" type="module"></script>
+  </head>
+  <body>
+    <canvas id="webgl-canvas"></canvas>
+    <div class="controller" id="controller">
+      <div class="column">
+        <div class="columnItem">
+          <p class="">縦方向</p>
+          <input type="number" name="" id="vcol" min="0" max="10" step="1" value="1">
+        </div>
+        <div class="columnItem">
+          <p class="">横方向</p>
+          <input type="number" name="" id="hcol" min="0" max="10" step="1" value="1">
+        </div>
+      </div>
+      <div class="table" id="table" data-x="1" data-y="1">
+        <div class="row">
+          <div class="cell">
+            <div class="cellInner">
+              <p class="">周波数</p>
+              <input type="number" name="" id="x1y1" value="0" step="1">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="line">
+        <p class="">ライン非表示</p>
+        <input type="checkbox" name="" id="line">
+      </div>
+      <div class="output">
+        <button type="button" id="gen">generate</button>
+      </div>
+    </div>
+  </body>
+</html>
