@@ -13,17 +13,19 @@
  * さを重視すべきですが、ここでは改造しやすさを重視してこうしています。
  * ========================================================================= */
 
-import { WebGLUtility, ShaderProgram } from '../lib/webgl.js';
-import { controller } from './controller.js';
+import { WebGLUtility, ShaderProgram } from '/lib/webgl.js';
+import { controller } from '/last/controller.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   controller();
+
   const app = new WebGLApp();
   window.addEventListener('resize', app.resize, false);
   app.init('webgl-canvas');
   await app.load();
   app.setup();
   app.render();
+
 }, false);
 
 class WebGLApp {
@@ -36,6 +38,8 @@ class WebGLApp {
     this.gl = null;
     this.running = false;
 
+    this.rafId = null;
+
     // this を固定するためメソッドをバインドする
     this.resize = this.resize.bind(this);
     this.render = this.render.bind(this);
@@ -45,14 +49,29 @@ class WebGLApp {
     this.timeScale = 1.0;  // 時間の進み方に対するスケール
     this.uTime = 0.0;      // uniform 変数 time 用
     this.uColumn = [0, 0];
+
+    this.isTest = controller.isTest;
+    this.fs = `precision highp float;
+
+    uniform vec2 resolution;
+    uniform float time;
+
+    ${localStorage.getItem('shader')}
+    
+    void main() {
+      float wave = noise(time, resolution);
+      vec3 rgb = vec3(wave);
+      gl_FragColor = vec4(rgb , 1.0);
+    }  `
   }
   /**
    * シェーダやテクスチャ用の画像など非同期で読み込みする処理を行う。
    * @return {Promise}
    */
   async load() {
-    const vs = await WebGLUtility.loadFile('./main.vert');
-    const fs = await WebGLUtility.loadFile('./main.frag');
+    const vs = await WebGLUtility.loadFile('/last/main.vert');
+    const fs = this.isTest ? await WebGLUtility.loadFile('/last/main.frag') : this.fs;
+    console.log
     this.shaderProgram = new ShaderProgram(this.gl, {
       vertexShaderSource: vs,
       fragmentShaderSource: fs,
@@ -65,16 +84,28 @@ class WebGLApp {
       uniform: [
         'resolution',
         'time',
-        'column',
-        'f',
-        'line'
+        ...(
+          this.isTest 
+            ? [
+              'column',
+              'f',
+              'line'
+            ]
+            :[]
+        )
       ],
       type: [
         'uniform2fv',
         'uniform1f',
-        'uniform2fv',
-        'uniform1fv',
-        'uniform1i'
+        ...(
+          this.isTest 
+            ? [
+              'uniform2fv',
+              'uniform1fv',
+              'uniform1i'
+            ]
+            :[]
+        )
       ],
     });
   }
@@ -98,6 +129,10 @@ class WebGLApp {
     const xCol = document.getElementById('vcol');
     const yCol = document.getElementById('hcol');
 
+    if (!xCol) {
+      return;
+    }
+
     this.uColumn = [xCol.value, yCol.value];
 
     [xCol, yCol].forEach((col, idx) => {
@@ -108,29 +143,6 @@ class WebGLApp {
 
     this.table = document.getElementById('table');
     this.line = document.getElementById('line');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   }
   /**
@@ -154,7 +166,7 @@ class WebGLApp {
     const gl = this.gl;
 
     if (this.running === true) {
-      requestAnimationFrame(this.render);
+      this.rafId = requestAnimationFrame(this.render);
     }
 
     // 直前のフレームからの経過時間を取得
@@ -170,18 +182,23 @@ class WebGLApp {
     this.shaderProgram.setUniform([
       [this.canvas.width, this.canvas.height],
       this.uTime,
-      this.uColumn,
-      this.table.getVals(),
-      this.line.checked ? 1 : 0
+      ...(
+        this.isTest 
+          ? [
+            this.uColumn,
+            this.table.getVals(),
+            this.line.checked ? 1 : 0
+          ]
+          : []
+      )
     ]);
-    console.log('aaa', this.line.checked)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.position.length / 3);
   }
   /**
    * リサイズ処理を行う。
    */
   resize() {
-    this.canvas.width = window.innerWidth / 2;
+    this.canvas.width = window.innerWidth / (this.isTest ? 2 : 1);
     this.canvas.height = window.innerHeight;
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
   }
@@ -206,6 +223,10 @@ class WebGLApp {
     if (this.gl == null) {
       throw new Error('webgl not supported');
     }
+  }
+
+  dispose() {
+    cancelAnimationFrame(this.rafId);
   }
 }
 

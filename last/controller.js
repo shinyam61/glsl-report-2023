@@ -1,6 +1,12 @@
 const controller = () => {
 
   const cRoot = document.getElementById('controller');
+
+  if (!cRoot) {
+    controller.isTest = false;
+    return;
+  }
+  controller.isTest = true;
   
   const xCol = document.getElementById('vcol');
   const yCol = document.getElementById('hcol');
@@ -76,6 +82,7 @@ const controller = () => {
     const fStr = `float noise(float time,vec2 resolution) {vec2 coord=gl_FragCoord.xy/resolution;vec2 signedCoord=coord*2.0-1.0;return (${sinCalcStrs.join('+')})/${(usableValsCount * 2).toFixed(1)}+.5;}`
     navigator.clipboard.writeText(fStr)
       .then(() => {
+        localStorage.setItem('shader', fStr);
         console.log('copyed')
       })
   });
